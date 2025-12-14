@@ -1,0 +1,491 @@
+openapi: 3.0.3
+info:
+  title: Crime Management System API
+  description: REST API for managing crimes, cases, suspects, victims, witnesses, evidence, and audit logs
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    # ------------------- USERS & ROLES -------------------
+    Role:
+      type: object
+      properties:
+        id: integer
+        name: string
+
+    User:
+      type: object
+      properties:
+        id: integer
+        fullName: string
+        email: string
+        isActive: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+
+    LoginRequest:
+      type: object
+      properties:
+        email: string
+        password: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token: string
+
+    # ------------------- CRIMES -------------------
+    CrimeType:
+      type: object
+      properties:
+        id: integer
+        name: string
+
+    CrimeLocation:
+      type: object
+      properties:
+        id: integer
+        address: string
+        latitude: number
+        longitude: number
+
+    Crime:
+      type: object
+      properties:
+        id: integer
+        crimeType:
+          $ref: '#/components/schemas/CrimeType'
+        location:
+          $ref: '#/components/schemas/CrimeLocation'
+        description: string
+        occurredAt: string
+        reportedBy:
+          $ref: '#/components/schemas/User'
+        createdAt: string
+        updatedAt: string
+
+    # ------------------- CASES -------------------
+    CaseStatus:
+      type: object
+      properties:
+        id: integer
+        status: string
+
+    Case:
+      type: object
+      properties:
+        id: integer
+        crime:
+          $ref: '#/components/schemas/Crime'
+        assignedOfficer:
+          $ref: '#/components/schemas/User'
+        status:
+          $ref: '#/components/schemas/CaseStatus'
+        summary: string
+        createdAt: string
+        updatedAt: string
+
+    # ------------------- PERSONS -------------------
+    Person:
+      type: object
+      properties:
+        id: integer
+        name: string
+        phone: string
+        address: string
+        dateOfBirth: string
+
+    Suspect:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            criminalHistory: string
+
+    Victim:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            injuryDescription: string
+
+    Witness:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            statement: string
+
+    # ------------------- EVIDENCE -------------------
+    Evidence:
+      type: object
+      properties:
+        id: integer
+        caseId: integer
+        evidenceType: string
+        filePath: string
+        fileUrl: string
+        fileSize: integer
+        description: string
+        uploadedBy:
+          $ref: '#/components/schemas/User'
+        uploadedAt: string
+
+    # ------------------- CASE UPDATES -------------------
+    CaseUpdate:
+      type: object
+      properties:
+        id: integer
+        caseId: integer
+        updatedBy:
+          $ref: '#/components/schemas/User'
+        updateNote: string
+        updatedAt: string
+
+    # ------------------- CASE ASSIGNMENTS -------------------
+    CaseAssignment:
+      type: object
+      properties:
+        id: integer
+        caseId: integer
+        officer:
+          $ref: '#/components/schemas/User'
+        assignedAt: string
+
+    # ------------------- AUDIT LOGS -------------------
+    AuditLog:
+      type: object
+      properties:
+        id: integer
+        user:
+          $ref: '#/components/schemas/User'
+        actionType: string
+        action: string
+        ipAddress: string
+        userAgent: string
+        createdAt: string
+
+paths:
+
+  # ------------------- AUTH -------------------
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  # ------------------- USERS -------------------
+  /users:
+    get:
+      summary: Get all users (ADMIN only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  # ------------------- ROLES -------------------
+  /roles:
+    get:
+      summary: Get all roles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+
+  # ------------------- CRIMES -------------------
+  /crimes:
+    get:
+      summary: Get all crimes
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of crimes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Crime'
+
+    post:
+      summary: Create a new crime
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                crimeTypeId: integer
+                locationId: integer
+                description: string
+                occurredAt:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Crime created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crime'
+
+  # ------------------- CASES -------------------
+  /cases:
+    get:
+      summary: Get all cases
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Case'
+
+    post:
+      summary: Create a new case
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                crimeId: integer
+                assignedOfficerId: integer
+                statusId: integer
+                summary: string
+      responses:
+        '201':
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+
+  # ------------------- CASE ASSIGNMENTS -------------------
+  /cases/{caseId}/assign:
+    post:
+      summary: Assign an officer to a case
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                officerId: integer
+      responses:
+        '201':
+          description: Officer assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseAssignment'
+
+  # ------------------- CASE UPDATES -------------------
+  /cases/{caseId}/updates:
+    post:
+      summary: Add update to a case timeline
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                updateNote: string
+      responses:
+        '201':
+          description: Case update added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseUpdate'
+
+  # ------------------- PERSONS (SUSPECTS/VICTIMS/WITNESSES) -------------------
+  /cases/{caseId}/suspects:
+    post:
+      summary: Assign a suspect to a case
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                suspectId: integer
+      responses:
+        '201':
+          description: Suspect assigned
+
+  /cases/{caseId}/victims:
+    post:
+      summary: Assign a victim to a case
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                victimId: integer
+      responses:
+        '201':
+          description: Victim assigned
+
+  /cases/{caseId}/witnesses:
+    post:
+      summary: Assign a witness to a case
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                witnessId: integer
+      responses:
+        '201':
+          description: Witness assigned
+
+  # ------------------- EVIDENCE -------------------
+  /cases/{caseId}/evidence:
+    post:
+      summary: Upload evidence for a case
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                evidenceType:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Evidence uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evidence'
+
+  # ------------------- AUDIT LOGS -------------------
+  /audit-logs:
+    get:
+      summary: Get all audit logs (ADMIN only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLog'

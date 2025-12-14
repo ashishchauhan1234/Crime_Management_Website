@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Compiled class file
 *.class
 
@@ -22,3 +23,72 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+=======
+# =====================
+# Help / Docs
+# =====================
+HELP.md
+
+# =====================
+# Maven
+# =====================
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Allow target folders inside src (rare but intentional)
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# =====================
+# Spring Tool Suite (STS)
+# =====================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# =====================
+# IntelliJ IDEA
+# =====================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# =====================
+# NetBeans
+# =====================
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# =====================
+# Gradle
+# =====================
+build/
+
+# Allow build folders inside src
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =====================
+# VS Code
+# =====================
+.vscode/
+
+# =====================
+# OS files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Logs
+# =====================
+*.log
